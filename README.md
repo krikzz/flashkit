@@ -1,0 +1,1 @@
+Flasher/dumper for genesis. PCB design allows famicom slot installing as well.
