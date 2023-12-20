@@ -252,8 +252,6 @@ namespace flashkit_md
         private void btn_wr_rom_Click(object sender, EventArgs e)
         {
 
-            
-
             try
             {
                 byte[] rom;
@@ -261,7 +259,6 @@ namespace flashkit_md
                 int block_len = 4096;
                 Device.connect();
                 Device.setDelay(0);
-              
 
                 if (openFileDialog1.ShowDialog() == DialogResult.OK)
                 {
@@ -273,6 +270,8 @@ namespace flashkit_md
                     rom = new byte[rom_size];
                     f.Read(rom, 0, rom_size);
                     f.Close();
+
+                    initOpenED(rom);
 
                     progressBar1.Value = 0;
                     progressBar1.Maximum = rom_size;
@@ -336,6 +335,38 @@ namespace flashkit_md
             Device.disconnect();
         }
 
+        //*********************************************************************************** OPEN-ED stuff
+        void initOpenED(byte [] rom)
+        {
+            string open_ed = "OPEN-EVERDRIVE";
 
+            for (int i = 0; i < open_ed.Length; i++)
+            {
+                if (rom[0x120 + i] != open_ed.ToCharArray()[i]) return;
+            }
+
+            Device.writeWord(0xA130E0, 0x0404);//Open-ED init rom bank
+
+            applyDate(rom, 0x1c8, DateTime.Now);
+        }
+
+        static void applyDate(byte[] buff, int offset, DateTime date_time)
+        {
+            UInt16 date;
+            UInt16 time;
+            //DateTime date_time = DateTime.Now;
+
+            date = (UInt16)(date_time.Day | (date_time.Month << 5) | (date_time.Year - 1980 << 9));
+            time = (UInt16)((date_time.Second / 2 | (date_time.Hour << 11) | (date_time.Minute << 5)));
+
+            applyShort(buff, offset, date);
+            applyShort(buff, offset + 2, time);
+        }
+
+        static void applyShort(byte[] buff, int offset, int val)
+        {
+            buff[offset + 0] = (byte)(val >> 0);
+            buff[offset + 1] = (byte)(val >> 8);
+        }
     }
 }
